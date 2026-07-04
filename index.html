@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- SEO -->
+  <title>Task Tracker — Daily Planner & Time Logger</title>
+  <meta name="description"
+        content="A beautiful daily task planner with built-in time tracking.
+                 Plan your day, start timers on individual tasks, and review
+                 a full time summary — all stored locally in your browser." />
+
+  <!-- Stylesheet (includes Google Font import) -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       ANIMATED BACKGROUND ORBS
+       Decorative radial-gradient blobs that drift slowly behind the UI.
+       Defined in CSS; no JS required.
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <div class="bg-orbs" aria-hidden="true">
+    <div class="bg-orb bg-orb-1"></div>
+    <div class="bg-orb bg-orb-2"></div>
+    <div class="bg-orb bg-orb-3"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       APP CONTAINER — two-column grid (sidebar + main)
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <div class="app-container">
+
+    <!-- ──────────────────────────────────────────────────────────────────────
+         SIDEBAR
+         Contains: brand, day navigation, time summary panel.
+         ────────────────────────────────────────────────────────────────────── -->
+    <aside class="sidebar" role="complementary" aria-label="Sidebar">
+
+      <!-- Brand -->
+      <div class="sidebar-brand">
+        <span class="brand-icon" aria-hidden="true">⚡</span>
+        <span class="brand-name">Task Tracker</span>
+      </div>
+
+      <!-- Day Navigation Controls -->
+      <nav class="day-nav" aria-label="Day navigation">
+        <button id="btn-prev"
+                class="btn-nav"
+                aria-label="Previous day"
+                title="Previous day">‹</button>
+
+        <button id="btn-today"
+                class="btn-today"
+                aria-label="Go to today"
+                title="Jump to today">Today</button>
+
+        <button id="btn-next"
+                class="btn-nav"
+                aria-label="Next day"
+                title="Next day">›</button>
+      </nav>
+
+      <!-- Time Summary Panel -->
+      <section class="summary-panel" aria-label="Time summary">
+        <h2 class="summary-title">Time Summary</h2>
+
+        <!-- Daily total -->
+        <div class="summary-total-card">
+          <span class="summary-total-label">Total today</span>
+          <span id="summary-total"
+                class="summary-total-time"
+                aria-live="polite"
+                aria-label="Total time spent today">00:00:00</span>
+        </div>
+
+        <!-- Per-task breakdown list — populated by Renderer.renderSummary() -->
+        <ul id="summary-list"
+            class="summary-list"
+            aria-label="Time per task"
+            aria-live="polite">
+          <li class="summary-empty">No tasks yet</li>
+        </ul>
+      </section>
+
+    </aside><!-- /sidebar -->
+
+
+    <!-- ──────────────────────────────────────────────────────────────────────
+         MAIN CONTENT
+         Contains: date header, add-task form, task list.
+         ────────────────────────────────────────────────────────────────────── -->
+    <main class="main-content" role="main">
+
+      <!-- Date Header -->
+      <header class="date-header">
+        <div class="date-label-group">
+          <!-- Badge is hidden when not viewing today (toggled by Renderer) -->
+          <span id="date-today-badge"
+                class="date-today-badge hidden"
+                aria-hidden="true">Today</span>
+
+          <!-- h1: current selected date — updated by Renderer.renderDateHeader() -->
+          <h1 id="current-date-label">Loading…</h1>
+        </div>
+
+        <!-- Opens the inline add-task form -->
+        <button id="btn-add-task"
+                class="btn-add-task"
+                aria-label="Add a new task"
+                aria-controls="add-task-form"
+                aria-expanded="false">
+          <span class="btn-plus" aria-hidden="true">+</span>
+          Add Task
+        </button>
+      </header>
+
+      <!-- ────────────────────────────────────────────────────────────────────
+           ADD TASK FORM
+           Hidden by default; shown when the user clicks "+ Add Task".
+           The `hidden` class is toggled by initEventHandlers() in app.js.
+           ──────────────────────────────────────────────────────────────────── -->
+      <form id="add-task-form"
+            class="add-task-form hidden"
+            role="form"
+            aria-label="New task form"
+            onsubmit="return false;"><!-- Prevent native submit -->
+
+        <input id="task-input"
+               class="task-input"
+               type="text"
+               placeholder="What do you need to do?"
+               maxlength="120"
+               autocomplete="off"
+               aria-label="Task title"
+               aria-required="true" />
+
+        <!-- Confirm adds the task; Cancel closes the form without saving -->
+        <button id="btn-confirm-add"
+                type="button"
+                class="btn-confirm"
+                aria-label="Add task">Add</button>
+
+        <button id="btn-cancel-add"
+                type="button"
+                class="btn-cancel-add"
+                aria-label="Cancel adding task">Cancel</button>
+      </form>
+
+      <!-- ────────────────────────────────────────────────────────────────────
+           TASK LIST
+           Populated by Renderer.renderTaskList(). Event delegation is set up
+           in initEventHandlers() so no per-card listeners are needed.
+           ──────────────────────────────────────────────────────────────────── -->
+      <div id="task-list"
+           class="task-list"
+           role="list"
+           aria-label="Tasks for the selected day"
+           aria-live="polite">
+        <!-- Task cards are injected here by app.js -->
+      </div>
+
+    </main><!-- /main-content -->
+
+  </div><!-- /app-container -->
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SCRIPTS — core.js must be loaded before app.js
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <script src="core.js"></script>
+  <script src="app.js"></script>
+
+</body>
+</html>

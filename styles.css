@@ -1,0 +1,794 @@
+/**
+ * styles.css — Task Tracker Design System
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Dark glassmorphism aesthetic with animated background orbs, vibrant accent
+ * colors, smooth micro-animations, and a fully responsive grid layout.
+ *
+ * Table of Contents:
+ *   1. Design Tokens (CSS Custom Properties)
+ *   2. Reset & Base
+ *   3. Animated Background
+ *   4. App Layout (sidebar + main)
+ *   5. Sidebar — Brand, Day Nav, Summary Panel
+ *   6. Main Content — Date Header, Add-Task Form
+ *   7. Task List & Empty State
+ *   8. Task Cards
+ *   9. Status Pills
+ *   10. Timer Display & Buttons
+ *   11. Utility Classes
+ *   12. Scrollbars
+ *   13. Responsive Breakpoints
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   1. DESIGN TOKENS
+   ───────────────────────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  /* Background */
+  --bg-deep        : #07071a;
+  --bg-card        : rgba(255, 255, 255, 0.04);
+  --bg-card-hover  : rgba(255, 255, 255, 0.07);
+  --bg-sidebar     : rgba(4, 4, 16, 0.75);
+  --bg-input       : rgba(255, 255, 255, 0.05);
+
+  /* Borders */
+  --border         : rgba(255, 255, 255, 0.08);
+  --border-strong  : rgba(255, 255, 255, 0.16);
+  --border-accent  : rgba(139, 92, 246, 0.4);
+
+  /* Accent — violet/indigo */
+  --accent         : #8b5cf6;
+  --accent-dark    : #6d28d9;
+  --accent-glow    : rgba(139, 92, 246, 0.35);
+  --accent-text    : #a78bfa;
+
+  /* Status Colors */
+  --todo-color     : #64748b;
+  --todo-bg        : rgba(100, 116, 139, 0.15);
+  --inprogress-color : #f59e0b;
+  --inprogress-bg  : rgba(245, 158, 11, 0.15);
+  --done-color     : #10b981;
+  --done-bg        : rgba(16, 185, 129, 0.15);
+
+  /* Danger */
+  --danger         : #ef4444;
+  --danger-dark    : #dc2626;
+  --danger-glow    : rgba(239, 68, 68, 0.35);
+
+  /* Text */
+  --text-primary   : #f1f5f9;
+  --text-secondary : #94a3b8;
+  --text-muted     : #475569;
+
+  /* Typography */
+  --font           : 'Inter', system-ui, -apple-system, sans-serif;
+  --font-xs        : 0.7rem;
+  --font-sm        : 0.8rem;
+  --font-base      : 0.875rem;
+  --font-md        : 1rem;
+  --font-lg        : 1.125rem;
+  --font-xl        : 1.35rem;
+  --font-2xl       : 1.65rem;
+
+  /* Spacing */
+  --sp-1           : 4px;
+  --sp-2           : 8px;
+  --sp-3           : 12px;
+  --sp-4           : 16px;
+  --sp-5           : 20px;
+  --sp-6           : 24px;
+  --sp-8           : 32px;
+
+  /* Radii */
+  --r-sm           : 6px;
+  --r-md           : 10px;
+  --r-lg           : 16px;
+  --r-xl           : 20px;
+  --r-pill         : 9999px;
+
+  /* Transitions */
+  --t-fast         : 140ms ease;
+  --t-base         : 240ms ease;
+  --t-slow         : 380ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Shadows */
+  --shadow-sm      : 0 1px 4px rgba(0,0,0,0.5);
+  --shadow-md      : 0 4px 20px rgba(0,0,0,0.4);
+  --shadow-lg      : 0 8px 40px rgba(0,0,0,0.5);
+  --shadow-accent  : 0 4px 24px var(--accent-glow);
+  --shadow-danger  : 0 4px 20px var(--danger-glow);
+
+  /* Sidebar width */
+  --sidebar-w      : 290px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   2. RESET & BASE
+   ───────────────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  font-family     : var(--font);
+  font-size       : var(--font-base);
+  color           : var(--text-primary);
+  background-color: var(--bg-deep);
+  line-height     : 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+button { font-family: var(--font); }
+input  { font-family: var(--font); }
+ul, ol { list-style: none; }
+a      { text-decoration: none; color: inherit; }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   3. ANIMATED BACKGROUND — floating radial-gradient orbs
+   ───────────────────────────────────────────────────────────────────────────── */
+.bg-orbs {
+  position: fixed;
+  inset    : 0;
+  z-index  : 0;
+  pointer-events: none;
+  overflow : hidden;
+}
+
+.bg-orb {
+  position     : absolute;
+  border-radius: 50%;
+  filter       : blur(90px);
+  opacity      : 0.12;
+  animation    : orbDrift 24s ease-in-out infinite;
+}
+
+/* Violet orb — top-left */
+.bg-orb-1 {
+  width           : 700px;
+  height          : 700px;
+  background      : radial-gradient(circle, #8b5cf6, transparent 70%);
+  top             : -250px;
+  left            : -200px;
+  animation-delay : 0s;
+}
+
+/* Cyan orb — bottom-right */
+.bg-orb-2 {
+  width           : 550px;
+  height          : 550px;
+  background      : radial-gradient(circle, #3b82f6, transparent 70%);
+  bottom          : -200px;
+  right           : -150px;
+  animation-delay : -9s;
+}
+
+/* Rose orb — center */
+.bg-orb-3 {
+  width           : 450px;
+  height          : 450px;
+  background      : radial-gradient(circle, #ec4899, transparent 70%);
+  top             : 40%;
+  left            : 45%;
+  animation-delay : -18s;
+  opacity         : 0.07;
+}
+
+@keyframes orbDrift {
+  0%, 100% { transform: translate(0px,   0px)   scale(1);    }
+  33%       { transform: translate(40px, -40px)  scale(1.06); }
+  66%       { transform: translate(-25px, 30px)  scale(0.94); }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   4. APP LAYOUT
+   ───────────────────────────────────────────────────────────────────────────── */
+.app-container {
+  position      : relative;
+  z-index       : 1;
+  display       : grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  height        : 100vh;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   5. SIDEBAR
+   ───────────────────────────────────────────────────────────────────────────── */
+.sidebar {
+  background       : var(--bg-sidebar);
+  backdrop-filter  : blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-right     : 1px solid var(--border);
+  display          : flex;
+  flex-direction   : column;
+  padding          : var(--sp-6);
+  gap              : var(--sp-5);
+  overflow-y       : auto;
+}
+
+/* — Brand ─── */
+.sidebar-brand {
+  display    : flex;
+  align-items: center;
+  gap        : var(--sp-2);
+  padding-bottom: var(--sp-3);
+  border-bottom : 1px solid var(--border);
+}
+
+.brand-icon {
+  font-size  : 1.4rem;
+  filter     : drop-shadow(0 0 10px rgba(139, 92, 246, 0.9));
+  flex-shrink: 0;
+}
+
+.brand-name {
+  font-size  : var(--font-xl);
+  font-weight: 800;
+  background : linear-gradient(135deg, #a78bfa 0%, #60a5fa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip        : text;
+  letter-spacing         : -0.4px;
+}
+
+/* — Day Navigation ─── */
+.day-nav {
+  display       : flex;
+  align-items   : center;
+  gap           : var(--sp-2);
+  background    : var(--bg-card);
+  border        : 1px solid var(--border);
+  border-radius : var(--r-md);
+  padding       : var(--sp-2);
+}
+
+.btn-nav {
+  flex           : 0 0 auto;
+  background     : transparent;
+  border         : none;
+  color          : var(--text-secondary);
+  cursor         : pointer;
+  padding        : var(--sp-2) var(--sp-3);
+  border-radius  : var(--r-sm);
+  font-size      : var(--font-md);
+  line-height    : 1;
+  transition     : all var(--t-fast);
+  display        : flex;
+  align-items    : center;
+  justify-content: center;
+}
+
+.btn-nav:hover {
+  background: var(--bg-card-hover);
+  color     : var(--text-primary);
+}
+
+.btn-today {
+  flex          : 1;
+  background    : transparent;
+  border        : 1px solid var(--border);
+  border-radius : var(--r-sm);
+  color         : var(--text-secondary);
+  font-family   : var(--font);
+  font-size     : var(--font-xs);
+  font-weight   : 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  cursor        : pointer;
+  padding       : var(--sp-1) var(--sp-2);
+  transition    : all var(--t-fast);
+}
+
+.btn-today:hover:not([disabled]) {
+  border-color: var(--accent);
+  color       : var(--accent-text);
+}
+
+.btn-today[disabled] {
+  opacity       : 0.35;
+  cursor        : default;
+  pointer-events: none;
+}
+
+/* — Summary Panel ─── */
+.summary-panel { flex: 1; min-height: 0; }
+
+.summary-title {
+  font-size     : var(--font-xs);
+  font-weight   : 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color         : var(--text-muted);
+  margin-bottom : var(--sp-3);
+}
+
+.summary-total-card {
+  display       : flex;
+  justify-content: space-between;
+  align-items   : center;
+  padding       : var(--sp-4);
+  background    : linear-gradient(135deg,
+    rgba(139, 92, 246, 0.14),
+    rgba(59, 130, 246, 0.14)
+  );
+  border        : 1px solid rgba(139, 92, 246, 0.28);
+  border-radius : var(--r-md);
+  margin-bottom : var(--sp-3);
+}
+
+.summary-total-label {
+  font-size  : var(--font-sm);
+  font-weight: 500;
+  color      : var(--text-secondary);
+}
+
+.summary-total-time {
+  font-size           : var(--font-xl);
+  font-weight         : 700;
+  font-variant-numeric: tabular-nums;
+  background          : linear-gradient(135deg, #a78bfa, #60a5fa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip     : text;
+  letter-spacing      : 1px;
+}
+
+.summary-list {
+  display       : flex;
+  flex-direction: column;
+  gap           : 2px;
+  overflow-y    : auto;
+  max-height    : 320px;
+}
+
+.summary-item {
+  display        : flex;
+  justify-content: space-between;
+  align-items    : center;
+  padding        : var(--sp-2) var(--sp-2);
+  border-radius  : var(--r-sm);
+  transition     : background var(--t-fast);
+  gap            : var(--sp-2);
+}
+
+.summary-item:hover { background: var(--bg-card); }
+
+.summary-task-name {
+  font-size    : var(--font-sm);
+  color        : var(--text-secondary);
+  overflow     : hidden;
+  text-overflow: ellipsis;
+  white-space  : nowrap;
+  flex         : 1;
+}
+
+.summary-task-time {
+  font-size           : var(--font-xs);
+  font-weight         : 600;
+  font-variant-numeric: tabular-nums;
+  color               : var(--text-muted);
+  flex-shrink         : 0;
+  letter-spacing      : 0.5px;
+}
+
+.summary-task-time.is-running { color: var(--inprogress-color); }
+
+.summary-empty {
+  font-size : var(--font-sm);
+  color     : var(--text-muted);
+  text-align: center;
+  padding   : var(--sp-4);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   6. MAIN CONTENT
+   ───────────────────────────────────────────────────────────────────────────── */
+.main-content {
+  display       : flex;
+  flex-direction: column;
+  overflow      : hidden;
+  padding       : var(--sp-8) var(--sp-8) var(--sp-6);
+  gap           : var(--sp-5);
+}
+
+/* — Date Header ─── */
+.date-header {
+  display        : flex;
+  justify-content: space-between;
+  align-items    : flex-end;
+  flex-shrink    : 0;
+}
+
+.date-label-group { display: flex; flex-direction: column; gap: 2px; }
+
+.date-today-badge {
+  font-size     : var(--font-xs);
+  font-weight   : 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color         : var(--accent-text);
+  height        : 16px; /* Reserve space even when hidden */
+}
+
+.date-today-badge.hidden { visibility: hidden; }
+
+#current-date-label {
+  font-size     : var(--font-2xl);
+  font-weight   : 800;
+  letter-spacing: -0.6px;
+  color         : var(--text-primary);
+}
+
+/* — Add Task Button ─── */
+.btn-add-task {
+  display       : inline-flex;
+  align-items   : center;
+  gap           : var(--sp-2);
+  padding       : 11px var(--sp-5);
+  background    : linear-gradient(135deg, var(--accent), var(--accent-dark));
+  border        : none;
+  border-radius : var(--r-pill);
+  color         : #fff;
+  font-size     : var(--font-sm);
+  font-weight   : 700;
+  letter-spacing: 0.3px;
+  cursor        : pointer;
+  transition    : all var(--t-base);
+  box-shadow    : var(--shadow-accent);
+  white-space   : nowrap;
+}
+
+.btn-add-task:hover {
+  transform : translateY(-2px);
+  box-shadow: 0 8px 32px rgba(139, 92, 246, 0.55);
+}
+
+.btn-add-task:active { transform: translateY(0); }
+
+.btn-plus {
+  font-size  : 1.3rem;
+  line-height: 1;
+  font-weight: 400;
+}
+
+/* — Add Task Form ─── */
+.add-task-form {
+  display      : flex;
+  gap          : var(--sp-2);
+  align-items  : center;
+  padding      : var(--sp-3) var(--sp-4);
+  background   : var(--bg-card);
+  border       : 1px solid var(--border-strong);
+  border-radius: var(--r-lg);
+  backdrop-filter: blur(12px);
+  animation    : slideDown var(--t-slow);
+  flex-shrink  : 0;
+}
+
+.add-task-form.hidden { display: none; }
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.task-input {
+  flex      : 1;
+  background: transparent;
+  border    : none;
+  outline   : none;
+  color     : var(--text-primary);
+  font-size : var(--font-md);
+  font-weight: 400;
+  padding   : var(--sp-2) 0;
+}
+
+.task-input::placeholder { color: var(--text-muted); }
+
+.btn-confirm {
+  padding      : var(--sp-2) var(--sp-4);
+  background   : linear-gradient(135deg, var(--accent), var(--accent-dark));
+  border       : none;
+  border-radius: var(--r-md);
+  color        : #fff;
+  font-size    : var(--font-sm);
+  font-weight  : 600;
+  cursor       : pointer;
+  transition   : all var(--t-fast);
+  white-space  : nowrap;
+}
+
+.btn-confirm:hover { opacity: 0.88; transform: translateY(-1px); }
+
+.btn-cancel-add {
+  padding      : var(--sp-2) var(--sp-3);
+  background   : transparent;
+  border       : 1px solid var(--border);
+  border-radius: var(--r-md);
+  color        : var(--text-secondary);
+  font-size    : var(--font-sm);
+  cursor       : pointer;
+  transition   : all var(--t-fast);
+  white-space  : nowrap;
+}
+
+.btn-cancel-add:hover { border-color: var(--border-strong); color: var(--text-primary); }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   7. TASK LIST & EMPTY STATE
+   ───────────────────────────────────────────────────────────────────────────── */
+.task-list {
+  flex          : 1;
+  display       : flex;
+  flex-direction: column;
+  gap           : var(--sp-3);
+  overflow-y    : auto;
+  padding-right : var(--sp-1);
+  padding-bottom: var(--sp-4);
+}
+
+/* Empty state illustration */
+.empty-state {
+  display        : flex;
+  flex-direction : column;
+  align-items    : center;
+  justify-content: center;
+  height         : 100%;
+  min-height     : 220px;
+  gap            : var(--sp-2);
+  color          : var(--text-muted);
+  text-align     : center;
+  animation      : fadeInUp 0.5s ease;
+}
+
+.empty-icon { font-size: 3rem; opacity: 0.45; }
+
+.empty-state p {
+  font-size  : var(--font-lg);
+  font-weight: 500;
+  color      : var(--text-secondary);
+}
+
+.empty-state span { font-size: var(--font-sm); }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   8. TASK CARDS
+   ───────────────────────────────────────────────────────────────────────────── */
+.task-card {
+  background    : var(--bg-card);
+  border        : 1px solid var(--border);
+  border-left   : 3px solid var(--border);   /* overridden by status modifier */
+  border-radius : var(--r-lg);
+  padding       : var(--sp-4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display       : flex;
+  flex-direction: column;
+  gap           : var(--sp-2);
+  transition    : all var(--t-base);
+  animation     : fadeInUp 0.32s ease;
+  flex-shrink   : 0;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+.task-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-strong);
+  transform : translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Left-border accent by status */
+.task-card.status-todo        { border-left-color: var(--todo-color);       }
+.task-card.status-in-progress { border-left-color: var(--inprogress-color); }
+.task-card.status-done        { border-left-color: var(--done-color); opacity: 0.7; }
+
+/* Pulsing glow when timer is active */
+.task-card.timer-running {
+  border-color     : rgba(245, 158, 11, 0.35);
+  border-left-color: var(--inprogress-color);
+  animation        : fadeInUp 0.32s ease, timerCardGlow 3s ease-in-out infinite;
+}
+
+@keyframes timerCardGlow {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(245,158,11,0.08), 0 4px 28px rgba(245,158,11,0.08); }
+  50%       { box-shadow: 0 0 0 1px rgba(245,158,11,0.18), 0 4px 40px rgba(245,158,11,0.20); }
+}
+
+/* — Card header row ─── */
+.task-card-header {
+  display        : flex;
+  justify-content: space-between;
+  align-items    : center;
+}
+
+/* — Task title ─── */
+.task-title {
+  font-size  : var(--font-md);
+  font-weight: 500;
+  color      : var(--text-primary);
+  word-break : break-word;
+  line-height: 1.4;
+}
+
+.status-done .task-title {
+  text-decoration: line-through;
+  color          : var(--text-muted);
+}
+
+/* — Card footer row (timer) ─── */
+.task-footer {
+  display        : flex;
+  justify-content: space-between;
+  align-items    : center;
+  margin-top     : var(--sp-1);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   9. STATUS PILLS
+   ───────────────────────────────────────────────────────────────────────────── */
+.status-pill {
+  display       : inline-flex;
+  align-items   : center;
+  padding       : 3px 10px;
+  border-radius : var(--r-pill);
+  font-size     : var(--font-xs);
+  font-weight   : 700;
+  letter-spacing: 0.4px;
+  cursor        : pointer;
+  border        : none;
+  transition    : all var(--t-fast);
+}
+
+.status-pill:hover { filter: brightness(1.18); transform: scale(1.04); }
+
+.status-pill.status-todo        { background: var(--todo-bg);       color: var(--todo-color);       }
+.status-pill.status-in-progress { background: var(--inprogress-bg); color: var(--inprogress-color); }
+.status-pill.status-done        { background: var(--done-bg);       color: var(--done-color);       }
+
+/* Delete button — only visible on hover */
+.btn-delete {
+  display        : flex;
+  align-items    : center;
+  justify-content: center;
+  background     : transparent;
+  border         : none;
+  color          : var(--text-muted);
+  cursor         : pointer;
+  padding        : var(--sp-1);
+  border-radius  : var(--r-sm);
+  transition     : all var(--t-fast);
+  opacity        : 0;
+}
+
+.task-card:hover .btn-delete { opacity: 1; }
+
+.btn-delete:hover {
+  color     : var(--danger);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.btn-delete svg { width: 15px; height: 15px; }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   10. TIMER DISPLAY & BUTTONS
+   ───────────────────────────────────────────────────────────────────────────── */
+.timer-display {
+  font-size           : var(--font-lg);
+  font-weight         : 600;
+  font-variant-numeric: tabular-nums;
+  color               : var(--text-secondary);
+  letter-spacing      : 1.5px;
+}
+
+.timer-display.is-running {
+  color    : var(--inprogress-color);
+  animation: timerPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes timerPulse {
+  0%, 100% { opacity: 1;    }
+  50%       { opacity: 0.65; }
+}
+
+.btn-timer {
+  display       : inline-flex;
+  align-items   : center;
+  gap           : 6px;
+  padding       : 7px 16px;
+  border        : none;
+  border-radius : var(--r-pill);
+  font-size     : var(--font-xs);
+  font-weight   : 700;
+  letter-spacing: 0.3px;
+  cursor        : pointer;
+  transition    : all var(--t-fast);
+}
+
+.btn-timer svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+.btn-start {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color     : #fff;
+  box-shadow: 0 2px 14px rgba(139, 92, 246, 0.32);
+}
+
+.btn-start:hover {
+  transform : translateY(-1px);
+  box-shadow: 0 4px 22px rgba(139, 92, 246, 0.55);
+}
+
+.btn-stop {
+  background: linear-gradient(135deg, var(--danger), var(--danger-dark));
+  color     : #fff;
+  box-shadow: 0 2px 14px rgba(239, 68, 68, 0.28);
+}
+
+.btn-stop:hover {
+  transform : translateY(-1px);
+  box-shadow: 0 4px 22px rgba(239, 68, 68, 0.50);
+}
+
+.btn-timer:active { transform: translateY(0) scale(0.97); }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   11. UTILITY CLASSES
+   ───────────────────────────────────────────────────────────────────────────── */
+.hidden { display: none !important; }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   12. CUSTOM SCROLLBARS (webkit)
+   ───────────────────────────────────────────────────────────────────────────── */
+.task-list::-webkit-scrollbar,
+.sidebar::-webkit-scrollbar,
+.summary-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.task-list::-webkit-scrollbar-track,
+.sidebar::-webkit-scrollbar-track,
+.summary-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.task-list::-webkit-scrollbar-thumb,
+.sidebar::-webkit-scrollbar-thumb,
+.summary-list::-webkit-scrollbar-thumb {
+  background   : rgba(255, 255, 255, 0.1);
+  border-radius: var(--r-pill);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   13. RESPONSIVE — collapse sidebar on narrow viewports
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 680px) {
+  :root { --sidebar-w: 0px; }
+
+  .app-container {
+    grid-template-columns: 1fr;
+    grid-template-rows   : auto 1fr;
+  }
+
+  .sidebar {
+    /* Convert sidebar to a top bar on mobile */
+    flex-direction: row;
+    flex-wrap     : wrap;
+    align-items   : center;
+    border-right  : none;
+    border-bottom : 1px solid var(--border);
+    padding       : var(--sp-3) var(--sp-4);
+    gap           : var(--sp-3);
+    overflow      : hidden;
+  }
+
+  .sidebar-brand  { flex: 1; border-bottom: none; padding-bottom: 0; }
+  .summary-panel  { display: none; }          /* Hidden on mobile */
+  .main-content   { padding: var(--sp-4); }
+  #current-date-label { font-size: var(--font-xl); }
+}

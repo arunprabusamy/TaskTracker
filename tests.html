@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Task Tracker — Unit Tests</title>
+
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ─── Design Tokens ─────────────────────────────────────────────────── */
+    :root {
+      --bg          : #07071a;
+      --bg-card     : rgba(255,255,255,0.04);
+      --bg-card-h   : rgba(255,255,255,0.07);
+      --border      : rgba(255,255,255,0.08);
+      --border-s    : rgba(255,255,255,0.15);
+      --accent      : #8b5cf6;
+      --accent-text : #a78bfa;
+      --pass-color  : #10b981;
+      --pass-bg     : rgba(16,185,129,0.12);
+      --fail-color  : #ef4444;
+      --fail-bg     : rgba(239,68,68,0.12);
+      --skip-color  : #f59e0b;
+      --text-1      : #f1f5f9;
+      --text-2      : #94a3b8;
+      --text-3      : #475569;
+      --font        : 'Inter', system-ui, sans-serif;
+      --r-sm        : 6px;
+      --r-md        : 10px;
+      --r-lg        : 16px;
+      --r-pill      : 9999px;
+    }
+
+    /* ─── Reset & Base ───────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { height: 100%; }
+    body {
+      font-family     : var(--font);
+      background-color: var(--bg);
+      color           : var(--text-1);
+      min-height      : 100%;
+      padding         : 40px 24px 80px;
+      -webkit-font-smoothing: antialiased;
+      font-size       : 14px;
+      line-height     : 1.5;
+    }
+
+    /* ─── Background Orbs ───────────────────────────────────────────────── */
+    .bg-orbs { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+    .orb {
+      position     : absolute;
+      border-radius: 50%;
+      filter       : blur(90px);
+      opacity      : 0.09;
+      animation    : drift 24s ease-in-out infinite;
+    }
+    .orb-1 { width:600px;height:600px;background:radial-gradient(circle,#8b5cf6,transparent 70%);top:-200px;left:-150px;animation-delay:0s; }
+    .orb-2 { width:500px;height:500px;background:radial-gradient(circle,#3b82f6,transparent 70%);bottom:-150px;right:-100px;animation-delay:-9s; }
+    @keyframes drift {
+      0%,100% { transform: translate(0,0); }
+      50%      { transform: translate(20px,-20px); }
+    }
+
+    /* ─── Page Layout ───────────────────────────────────────────────────── */
+    .page-wrap {
+      position       : relative;
+      z-index        : 1;
+      max-width      : 860px;
+      margin         : 0 auto;
+      display        : flex;
+      flex-direction : column;
+      gap            : 28px;
+    }
+
+    /* ─── Header ────────────────────────────────────────────────────────── */
+    .page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+    .header-title {
+      display     : flex;
+      align-items : center;
+      gap         : 10px;
+    }
+    .header-icon { font-size: 1.6rem; filter: drop-shadow(0 0 10px rgba(139,92,246,0.9)); }
+    .header-title h1 {
+      font-size     : 1.6rem;
+      font-weight   : 800;
+      background    : linear-gradient(135deg,#a78bfa,#60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.5px;
+    }
+    .header-title p { font-size:0.75rem; color: var(--text-3); margin-top:2px; }
+
+    /* ─── Score Cards ───────────────────────────────────────────────────── */
+    .scoreboard {
+      display  : flex;
+      gap      : 12px;
+      flex-wrap: wrap;
+    }
+    .score-card {
+      display       : flex;
+      flex-direction: column;
+      align-items   : center;
+      padding       : 14px 24px;
+      background    : var(--bg-card);
+      border        : 1px solid var(--border);
+      border-radius : var(--r-lg);
+      min-width     : 90px;
+      gap           : 2px;
+      backdrop-filter: blur(12px);
+    }
+    .score-card .count {
+      font-size  : 2rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .score-card .label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; }
+    .score-pass { border-color: rgba(16,185,129,0.3); }
+    .score-pass .count { color: var(--pass-color); }
+    .score-pass .label { color: rgba(16,185,129,0.7); }
+    .score-fail { border-color: rgba(239,68,68,0.3); }
+    .score-fail .count { color: var(--fail-color); }
+    .score-fail .label { color: rgba(239,68,68,0.7); }
+    .score-total .count { color: var(--accent-text); }
+    .score-total .label { color: rgba(167,139,250,0.7); }
+
+    /* ─── Progress Bar ──────────────────────────────────────────────────── */
+    .progress-bar-wrap {
+      background   : var(--bg-card);
+      border       : 1px solid var(--border);
+      border-radius: var(--r-pill);
+      height       : 8px;
+      overflow     : hidden;
+    }
+    .progress-bar-fill {
+      height       : 100%;
+      background   : linear-gradient(90deg, var(--pass-color), #34d399);
+      border-radius: var(--r-pill);
+      transition   : width 0.6s cubic-bezier(0.16,1,0.3,1);
+    }
+
+    /* ─── Suite Group ───────────────────────────────────────────────────── */
+    .suite-group {
+      background   : var(--bg-card);
+      border       : 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow     : hidden;
+      backdrop-filter: blur(10px);
+    }
+
+    .suite-header {
+      display        : flex;
+      align-items    : center;
+      justify-content: space-between;
+      padding        : 14px 20px;
+      border-bottom  : 1px solid var(--border);
+      gap            : 12px;
+    }
+
+    .suite-name {
+      font-size  : 0.85rem;
+      font-weight: 700;
+      color      : var(--text-1);
+      letter-spacing: -0.2px;
+    }
+
+    .suite-badge {
+      font-size     : 0.68rem;
+      font-weight   : 600;
+      padding       : 2px 8px;
+      border-radius : var(--r-pill);
+      letter-spacing: 0.4px;
+    }
+
+    .suite-badge.all-pass { background: var(--pass-bg); color: var(--pass-color); }
+    .suite-badge.has-fail { background: var(--fail-bg); color: var(--fail-color); }
+
+    /* ─── Individual Test Rows ──────────────────────────────────────────── */
+    .test-row {
+      display    : flex;
+      align-items: flex-start;
+      gap        : 10px;
+      padding    : 10px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      transition : background 140ms ease;
+    }
+    .test-row:last-child { border-bottom: none; }
+    .test-row:hover { background: var(--bg-card-h); }
+
+    .test-icon {
+      flex-shrink: 0;
+      font-size  : 0.9rem;
+      margin-top : 1px;
+    }
+
+    .test-info { flex: 1; min-width: 0; }
+
+    .test-name {
+      font-size  : 0.8rem;
+      font-weight: 500;
+      color      : var(--text-1);
+    }
+
+    .test-error {
+      font-size    : 0.72rem;
+      color        : var(--fail-color);
+      margin-top   : 4px;
+      font-family  : 'Courier New', monospace;
+      background   : var(--fail-bg);
+      padding      : 4px 8px;
+      border-radius: var(--r-sm);
+      border-left  : 2px solid var(--fail-color);
+      white-space  : pre-wrap;
+      word-break   : break-all;
+    }
+
+    .test-duration {
+      font-size    : 0.68rem;
+      color        : var(--text-3);
+      margin-left  : auto;
+      flex-shrink  : 0;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ─── Run Button ────────────────────────────────────────────────────── */
+    #btn-run {
+      display      : inline-flex;
+      align-items  : center;
+      gap          : 6px;
+      padding      : 9px 20px;
+      background   : linear-gradient(135deg,#8b5cf6,#6d28d9);
+      border       : none;
+      border-radius: var(--r-pill);
+      color        : #fff;
+      font-family  : var(--font);
+      font-size    : 0.78rem;
+      font-weight  : 700;
+      cursor       : pointer;
+      letter-spacing: 0.3px;
+      box-shadow   : 0 4px 20px rgba(139,92,246,0.4);
+      transition   : all 200ms ease;
+    }
+    #btn-run:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(139,92,246,0.6); }
+    #btn-run:active { transform: translateY(0); }
+
+    /* ─── Footer note ───────────────────────────────────────────────────── */
+    .footer-note {
+      font-size : 0.72rem;
+      color     : var(--text-3);
+      text-align: center;
+    }
+    .footer-note a { color: var(--accent-text); }
+  </style>
+</head>
+<body>
+
+<!-- Decorative background -->
+<div class="bg-orbs" aria-hidden="true">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+</div>
+
+<div class="page-wrap">
+
+  <!-- ── Page Header ─────────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div class="header-title">
+      <span class="header-icon">🧪</span>
+      <div>
+        <h1>Unit Tests</h1>
+        <p>Task Tracker — core.js test suite</p>
+      </div>
+    </div>
+    <button id="btn-run" aria-label="Re-run all tests">▶ Run All Tests</button>
+  </div>
+
+  <!-- ── Score + Progress ────────────────────────────────────────────────── -->
+  <div>
+    <div class="scoreboard" id="scoreboard">
+      <div class="score-card score-total">
+        <span class="count" id="total-count">—</span>
+        <span class="label">Total</span>
+      </div>
+      <div class="score-card score-pass">
+        <span class="count" id="pass-count">—</span>
+        <span class="label">Passed</span>
+      </div>
+      <div class="score-card score-fail">
+        <span class="count" id="fail-count">—</span>
+        <span class="label">Failed</span>
+      </div>
+    </div>
+    <div class="progress-bar-wrap" style="margin-top:14px;">
+      <div class="progress-bar-fill" id="progress-bar" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- ── Test Results (injected by test runner) ───────────────────────────── -->
+  <div id="results-container"></div>
+
+  <p class="footer-note">
+    Tests run entirely in the browser.
+    Open <a href="index.html">index.html</a> to launch the app.
+  </p>
+
+</div>
+
+<!-- Load the pure core logic first (no DOM dependency) -->
+<script src="core.js"></script>
+
+<script>
+'use strict';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MINI TEST FRAMEWORK
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Lightweight test runner that collects results and renders them
+ * into the page's #results-container element.
+ */
+const Runner = {
+  /** @type {Array<{suite:string, name:string, passed:boolean, error:string|null, ms:number}>} */
+  results      : [],
+  _currentSuite: '',
+
+  /**
+   * Define a named test suite. The callback runs synchronously.
+   *
+   * @param {string}   name - Suite display name.
+   * @param {Function} fn   - Callback containing `it()` calls.
+   */
+  describe(name, fn) {
+    this._currentSuite = name;
+    fn();
+  },
+
+  /**
+   * Define a single test case within a suite.
+   *
+   * @param {string}   name - Test description.
+   * @param {Function} fn   - Test body; throws on assertion failure.
+   */
+  it(name, fn) {
+    const suite = this._currentSuite;
+    const start = performance.now();
+    try {
+      fn();
+      this.results.push({ suite, name, passed: true, error: null, ms: performance.now() - start });
+    } catch (err) {
+      this.results.push({ suite, name, passed: false, error: err.message, ms: performance.now() - start });
+    }
+  },
+
+  /**
+   * Build a chainable assertion object for a given value.
+   *
+   * @param {*} actual - The value to assert against.
+   * @returns {Object} Assertion chain.
+   */
+  expect(actual) {
+    return {
+      /**
+       * Strict equality (===).
+       * @param {*} expected
+       */
+      toBe(expected) {
+        if (actual !== expected) {
+          throw new Error(`Expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+        }
+      },
+      /**
+       * Deep equality via JSON round-trip.
+       * @param {*} expected
+       */
+      toEqual(expected) {
+        const a = JSON.stringify(actual);
+        const e = JSON.stringify(expected);
+        if (a !== e) throw new Error(`Expected\n  ${e}\ngot\n  ${a}`);
+      },
+      /** Assert value is truthy. */
+      toBeTruthy() {
+        if (!actual) throw new Error(`Expected truthy, got ${JSON.stringify(actual)}`);
+      },
+      /** Assert value is falsy. */
+      toBeFalsy() {
+        if (actual) throw new Error(`Expected falsy, got ${JSON.stringify(actual)}`);
+      },
+      /**
+       * Assert value is strictly greater than n.
+       * @param {number} n
+       */
+      toBeGreaterThan(n) {
+        if (actual <= n) throw new Error(`Expected ${actual} > ${n}`);
+      },
+      /**
+       * Assert value is strictly less than n.
+       * @param {number} n
+       */
+      toBeLessThan(n) {
+        if (actual >= n) throw new Error(`Expected ${actual} < ${n}`);
+      },
+      /**
+       * Assert array/string has exact length.
+       * @param {number} len
+       */
+      toHaveLength(len) {
+        if (actual.length !== len) {
+          throw new Error(`Expected length ${len}, got ${actual.length}`);
+        }
+      },
+      /**
+       * Assert string includes substring.
+       * @param {string} sub
+       */
+      toContain(sub) {
+        if (!actual.includes(sub)) {
+          throw new Error(`Expected ${JSON.stringify(actual)} to contain ${JSON.stringify(sub)}`);
+        }
+      },
+      /** Assert value is null. */
+      toBeNull() {
+        if (actual !== null) throw new Error(`Expected null, got ${JSON.stringify(actual)}`);
+      },
+    };
+  },
+
+  /**
+   * Render all collected results into #results-container and update
+   * the scoreboard counts and progress bar.
+   */
+  render() {
+    const container   = document.getElementById('results-container');
+    const passCount   = this.results.filter(r => r.passed).length;
+    const failCount   = this.results.filter(r => !r.passed).length;
+    const totalCount  = this.results.length;
+    const pct         = totalCount ? Math.round((passCount / totalCount) * 100) : 0;
+
+    // Update score cards
+    document.getElementById('total-count').textContent = totalCount;
+    document.getElementById('pass-count').textContent  = passCount;
+    document.getElementById('fail-count').textContent  = failCount;
+    document.getElementById('progress-bar').style.width = `${pct}%`;
+
+    // Group results by suite
+    const suites = {};
+    this.results.forEach(r => {
+      if (!suites[r.suite]) suites[r.suite] = [];
+      suites[r.suite].push(r);
+    });
+
+    container.innerHTML = '';
+
+    Object.entries(suites).forEach(([suiteName, tests]) => {
+      const allPass  = tests.every(t => t.passed);
+      const passN    = tests.filter(t => t.passed).length;
+
+      const group = document.createElement('div');
+      group.className = 'suite-group';
+
+      // Suite header
+      const header = document.createElement('div');
+      header.className = 'suite-header';
+      header.innerHTML = `
+        <span class="suite-name">${escapeForDisplay(suiteName)}</span>
+        <span class="suite-badge ${allPass ? 'all-pass' : 'has-fail'}">
+          ${passN} / ${tests.length} passed
+        </span>`;
+      group.appendChild(header);
+
+      // Individual test rows
+      tests.forEach(t => {
+        const row = document.createElement('div');
+        row.className = 'test-row';
+
+        const msStr   = t.ms < 1 ? '<1ms' : `${t.ms.toFixed(1)}ms`;
+        const icon    = t.passed ? '✅' : '❌';
+
+        row.innerHTML = `
+          <span class="test-icon" aria-hidden="true">${icon}</span>
+          <div class="test-info">
+            <div class="test-name">${escapeForDisplay(t.name)}</div>
+            ${t.error ? `<div class="test-error">${escapeForDisplay(t.error)}</div>` : ''}
+          </div>
+          <span class="test-duration">${msStr}</span>`;
+
+        group.appendChild(row);
+      });
+
+      container.appendChild(group);
+    });
+  },
+};
+
+/** HTML-escape a string for safe injection into innerHTML. */
+function escapeForDisplay(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MOCK STORAGE FACTORY
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Create a fresh in-memory storage object that mimics the localStorage API.
+ * Used to isolate TaskStore tests from the real browser localStorage.
+ *
+ * @returns {{ getItem: Function, setItem: Function, clear: Function }}
+ */
+function createMockStorage() {
+  let store = {};
+  return {
+    getItem : (key)        => Object.prototype.hasOwnProperty.call(store, key) ? store[key] : null,
+    setItem : (key, value) => { store[key] = String(value); },
+    clear   : ()           => { store = {}; },
+  };
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TEST SUITES
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Run all test suites and render the results. Called on page load and by button. */
+function runAllTests() {
+  // Reset runner state between re-runs
+  Runner.results       = [];
+  Runner._currentSuite = '';
+
+  const { describe, it, expect } = Runner;
+
+  // Bind so `this` is correct inside method calls
+  const D = describe.bind(Runner);
+  const I = it.bind(Runner);
+  const E = expect.bind(Runner);
+
+
+  // ── SUITE: formatTime ─────────────────────────────────────────────────────
+  D('formatTime()', () => {
+
+    I('formats zero seconds as 00:00:00', () => {
+      E(formatTime(0)).toBe('00:00:00');
+    });
+
+    I('formats 59 seconds as 00:00:59', () => {
+      E(formatTime(59)).toBe('00:00:59');
+    });
+
+    I('formats 60 seconds as 00:01:00', () => {
+      E(formatTime(60)).toBe('00:01:00');
+    });
+
+    I('formats 3600 seconds as 01:00:00', () => {
+      E(formatTime(3600)).toBe('01:00:00');
+    });
+
+    I('formats 3723 seconds as 01:02:03', () => {
+      E(formatTime(3723)).toBe('01:02:03');
+    });
+
+    I('pads all segments to two digits', () => {
+      // 1h 1m 1s
+      E(formatTime(3661)).toBe('01:01:01');
+    });
+
+    I('truncates fractional seconds (floors)', () => {
+      // 1.9 seconds should display as 00:00:01
+      E(formatTime(1.9)).toBe('00:00:01');
+    });
+
+    I('handles large hour values correctly', () => {
+      // 10 hours exactly
+      E(formatTime(36000)).toBe('10:00:00');
+    });
+  });
+
+
+  // ── SUITE: dateToKey ──────────────────────────────────────────────────────
+  D('dateToKey()', () => {
+
+    I('formats a date as YYYY-MM-DD', () => {
+      // June 14 2026 — month and day are both padded
+      const d = new Date(2026, 5, 14); // Month is 0-indexed
+      E(dateToKey(d)).toBe('2026-06-14');
+    });
+
+    I('pads single-digit month with a leading zero', () => {
+      const d = new Date(2026, 0, 5); // January 5
+      E(dateToKey(d)).toBe('2026-01-05');
+    });
+
+    I('pads single-digit day with a leading zero', () => {
+      const d = new Date(2026, 11, 3); // December 3
+      E(dateToKey(d)).toBe('2026-12-03');
+    });
+
+    I('handles end-of-year correctly', () => {
+      const d = new Date(2026, 11, 31); // December 31
+      E(dateToKey(d)).toBe('2026-12-31');
+    });
+  });
+
+
+  // ── SUITE: formatDisplayDate ──────────────────────────────────────────────
+  D('formatDisplayDate()', () => {
+
+    I('returns a non-empty string', () => {
+      E(formatDisplayDate(new Date())).toBeTruthy();
+    });
+
+    I('contains the year', () => {
+      const d = new Date(2026, 5, 14);
+      E(formatDisplayDate(d)).toContain('2026');
+    });
+
+    I('contains the month name', () => {
+      const d = new Date(2026, 5, 14); // June
+      E(formatDisplayDate(d)).toContain('June');
+    });
+
+    I('contains the numeric day', () => {
+      const d = new Date(2026, 5, 14);
+      E(formatDisplayDate(d)).toContain('14');
+    });
+  });
+
+
+  // ── SUITE: getTodayKey ────────────────────────────────────────────────────
+  D('getTodayKey()', () => {
+
+    I('returns a string in YYYY-MM-DD format', () => {
+      const key = getTodayKey();
+      // Basic format check via regex
+      const isValid = /^\d{4}-\d{2}-\d{2}$/.test(key);
+      E(isValid).toBeTruthy();
+    });
+
+    I('matches today produced by dateToKey', () => {
+      E(getTodayKey()).toBe(dateToKey(new Date()));
+    });
+  });
+
+
+  // ── SUITE: getElapsedSeconds ──────────────────────────────────────────────
+  D('getElapsedSeconds()', () => {
+
+    I('returns timeSpentSeconds when timer is stopped', () => {
+      const task = { timeSpentSeconds: 120, timerStartedAt: null };
+      E(getElapsedSeconds(task)).toBe(120);
+    });
+
+    I('adds live session time when timer is running', () => {
+      const startedAt = Date.now() - 5000; // started 5 seconds ago
+      const task      = { timeSpentSeconds: 10, timerStartedAt: startedAt };
+      const elapsed   = getElapsedSeconds(task);
+      // Should be about 15 seconds — allow ±0.5s tolerance
+      E(elapsed).toBeGreaterThan(14.5);
+      E(elapsed).toBeLessThan(15.5);
+    });
+
+    I('uses injected `now` for deterministic testing', () => {
+      const fixedNow  = 1_000_000;
+      const startedAt = fixedNow - 3000; // exactly 3 seconds ago
+      const task      = { timeSpentSeconds: 7, timerStartedAt: startedAt };
+      // 7 committed + 3 live = exactly 10
+      E(getElapsedSeconds(task, fixedNow)).toBe(10);
+    });
+
+    I('handles task with no timeSpentSeconds field gracefully', () => {
+      const task = { timerStartedAt: null }; // missing field
+      E(getElapsedSeconds(task)).toBe(0);
+    });
+
+    I('returns 0 for a brand-new task', () => {
+      const task = { timeSpentSeconds: 0, timerStartedAt: null };
+      E(getElapsedSeconds(task)).toBe(0);
+    });
+  });
+
+
+  // ── SUITE: getTotalTimeForDay ─────────────────────────────────────────────
+  D('getTotalTimeForDay()', () => {
+
+    I('returns 0 for an empty task list', () => {
+      E(getTotalTimeForDay([])).toBe(0);
+    });
+
+    I('sums timeSpentSeconds across stopped tasks', () => {
+      const tasks = [
+        { timeSpentSeconds: 60,  timerStartedAt: null },
+        { timeSpentSeconds: 120, timerStartedAt: null },
+        { timeSpentSeconds: 30,  timerStartedAt: null },
+      ];
+      E(getTotalTimeForDay(tasks)).toBe(210);
+    });
+
+    I('includes live timer time in the total', () => {
+      const fixedNow = 1_000_000;
+      const tasks    = [
+        { timeSpentSeconds: 100, timerStartedAt: null },
+        // Started 10 seconds before fixedNow
+        { timeSpentSeconds: 50,  timerStartedAt: fixedNow - 10_000 },
+      ];
+      // 100 + (50 + 10) = 160
+      E(getTotalTimeForDay(tasks, fixedNow)).toBe(160);
+    });
+  });
+
+
+  // ── SUITE: escapeHtml ─────────────────────────────────────────────────────
+  D('escapeHtml()', () => {
+
+    I('escapes < and > characters', () => {
+      E(escapeHtml('<b>')).toBe('&lt;b&gt;');
+    });
+
+    I('escapes & character', () => {
+      E(escapeHtml('A & B')).toBe('A &amp; B');
+    });
+
+    I('escapes double quotes', () => {
+      E(escapeHtml('"hello"')).toBe('&quot;hello&quot;');
+    });
+
+    I('escapes single quotes', () => {
+      E(escapeHtml("it's")).toBe('it&#039;s');
+    });
+
+    I('leaves safe strings unchanged', () => {
+      E(escapeHtml('Hello World 123')).toBe('Hello World 123');
+    });
+
+    I('converts non-string inputs to strings', () => {
+      E(typeof escapeHtml(42)).toBe('string');
+    });
+  });
+
+
+  // ── SUITE: TaskStore ──────────────────────────────────────────────────────
+  D('TaskStore', () => {
+
+    // Use a fresh mock before each group of tests
+    const mock = createMockStorage();
+    TaskStore._storage = mock;
+    const DATE = '2026-06-14';
+
+    I('starts with no tasks for a date', () => {
+      mock.clear();
+      E(TaskStore.getTasksForDate(DATE)).toHaveLength(0);
+    });
+
+    I('addTask() creates a task with correct defaults', () => {
+      mock.clear();
+      const task = TaskStore.addTask(DATE, '  Write tests  ');
+      E(task.title).toBe('Write tests');         // trimmed
+      E(task.status).toBe('todo');
+      E(task.timeSpentSeconds).toBe(0);
+      E(task.timerStartedAt).toBeNull();
+      E(typeof task.id).toBe('string');
+      E(task.id.length).toBeGreaterThan(0);
+    });
+
+    I('addTask() persists to storage', () => {
+      mock.clear();
+      TaskStore.addTask(DATE, 'Task A');
+      E(TaskStore.getTasksForDate(DATE)).toHaveLength(1);
+    });
+
+    I('addTask() throws on empty title', () => {
+      mock.clear();
+      let threw = false;
+      try { TaskStore.addTask(DATE, '   '); } catch (_) { threw = true; }
+      E(threw).toBeTruthy();
+    });
+
+    I('getTask() returns the correct task by id', () => {
+      mock.clear();
+      const created = TaskStore.addTask(DATE, 'Find me');
+      const found   = TaskStore.getTask(DATE, created.id);
+      E(found).toEqual(created);
+    });
+
+    I('getTask() returns null for unknown id', () => {
+      mock.clear();
+      E(TaskStore.getTask(DATE, 'nonexistent-id')).toBeNull();
+    });
+
+    I('updateTask() merges fields correctly', () => {
+      mock.clear();
+      const task    = TaskStore.addTask(DATE, 'Update me');
+      const updated = TaskStore.updateTask(DATE, task.id, { status: 'done' });
+      E(updated.status).toBe('done');
+      E(updated.title).toBe('Update me');   // unchanged
+    });
+
+    I('updateTask() returns null for unknown id', () => {
+      mock.clear();
+      TaskStore.addTask(DATE, 'Exists');
+      E(TaskStore.updateTask(DATE, 'bad-id', { status: 'done' })).toBeNull();
+    });
+
+    I('deleteTask() removes the task', () => {
+      mock.clear();
+      const task = TaskStore.addTask(DATE, 'Delete me');
+      const ok   = TaskStore.deleteTask(DATE, task.id);
+      E(ok).toBeTruthy();
+      E(TaskStore.getTasksForDate(DATE)).toHaveLength(0);
+    });
+
+    I('deleteTask() returns false for unknown id', () => {
+      mock.clear();
+      TaskStore.addTask(DATE, 'Stays');
+      E(TaskStore.deleteTask(DATE, 'bad-id')).toBe(false);
+    });
+
+    I('cycleStatus() advances todo → in-progress', () => {
+      mock.clear();
+      const task    = TaskStore.addTask(DATE, 'Cycle me');
+      const updated = TaskStore.cycleStatus(DATE, task.id);
+      E(updated.status).toBe('in-progress');
+    });
+
+    I('cycleStatus() advances in-progress → done', () => {
+      mock.clear();
+      const task = TaskStore.addTask(DATE, 'Cycle me 2');
+      TaskStore.cycleStatus(DATE, task.id);            // todo → in-progress
+      const done = TaskStore.cycleStatus(DATE, task.id); // in-progress → done
+      E(done.status).toBe('done');
+    });
+
+    I('cycleStatus() wraps done → todo', () => {
+      mock.clear();
+      const task = TaskStore.addTask(DATE, 'Wrap');
+      TaskStore.cycleStatus(DATE, task.id); // → in-progress
+      TaskStore.cycleStatus(DATE, task.id); // → done
+      const back = TaskStore.cycleStatus(DATE, task.id); // → todo
+      E(back.status).toBe('todo');
+    });
+
+    I('cycleStatus() returns null for unknown id', () => {
+      mock.clear();
+      E(TaskStore.cycleStatus(DATE, 'no-such-id')).toBeNull();
+    });
+
+    I('multiple tasks coexist on the same date', () => {
+      mock.clear();
+      TaskStore.addTask(DATE, 'Alpha');
+      TaskStore.addTask(DATE, 'Beta');
+      TaskStore.addTask(DATE, 'Gamma');
+      E(TaskStore.getTasksForDate(DATE)).toHaveLength(3);
+    });
+
+    I('tasks on different dates are independent', () => {
+      mock.clear();
+      const DATE2 = '2026-06-15';
+      TaskStore.addTask(DATE,  'Day 1 task');
+      TaskStore.addTask(DATE2, 'Day 2 task');
+      E(TaskStore.getTasksForDate(DATE)).toHaveLength(1);
+      E(TaskStore.getTasksForDate(DATE2)).toHaveLength(1);
+    });
+
+    I('gracefully returns {} when storage is corrupt', () => {
+      // Corrupt the storage entry
+      mock.setItem(TaskStore.STORAGE_KEY, '{ invalid json !!');
+      E(TaskStore.getTasksForDate(DATE)).toHaveLength(0);
+      mock.clear(); // Restore clean state
+    });
+  });
+
+
+  // ── SUITE: DateNavigator ──────────────────────────────────────────────────
+  D('DateNavigator', () => {
+
+    I('getDateKey() returns a YYYY-MM-DD string', () => {
+      DateNavigator.goToday();
+      const key = DateNavigator.getDateKey();
+      E(/^\d{4}-\d{2}-\d{2}$/.test(key)).toBeTruthy();
+    });
+
+    I('isToday() is true after goToday()', () => {
+      DateNavigator.goToday();
+      E(DateNavigator.isToday()).toBeTruthy();
+    });
+
+    I('goNext() moves to the next calendar day', () => {
+      DateNavigator.goToday();
+      const before = DateNavigator.getDateKey();
+      DateNavigator.goNext();
+      const after  = DateNavigator.getDateKey();
+      E(after > before).toBeTruthy(); // lexicographic: YYYY-MM-DD sorts correctly
+    });
+
+    I('goPrev() moves to the previous calendar day', () => {
+      DateNavigator.goToday();
+      const before = DateNavigator.getDateKey();
+      DateNavigator.goPrev();
+      const after  = DateNavigator.getDateKey();
+      E(after < before).toBeTruthy();
+    });
+
+    I('goNext() then goPrev() returns to the original date', () => {
+      DateNavigator.goToday();
+      const original = DateNavigator.getDateKey();
+      DateNavigator.goNext();
+      DateNavigator.goPrev();
+      E(DateNavigator.getDateKey()).toBe(original);
+    });
+
+    I('isToday() is false after goNext()', () => {
+      DateNavigator.goToday();
+      DateNavigator.goNext();
+      E(DateNavigator.isToday()).toBeFalsy();
+    });
+
+    I('isToday() is false after goPrev()', () => {
+      DateNavigator.goToday();
+      DateNavigator.goPrev();
+      E(DateNavigator.isToday()).toBeFalsy();
+    });
+
+    I('getDisplayDate() returns a non-empty string', () => {
+      DateNavigator.goToday();
+      E(DateNavigator.getDisplayDate()).toBeTruthy();
+    });
+
+    I('multiple goNext() calls advance by exact days', () => {
+      // Set to a known date
+      DateNavigator.currentDate = new Date(2026, 5, 14); // June 14
+      DateNavigator.goNext();
+      DateNavigator.goNext();
+      DateNavigator.goNext();
+      E(DateNavigator.getDateKey()).toBe('2026-06-17');
+      DateNavigator.goToday(); // Restore
+    });
+  });
+
+
+  // ── SUITE: TimerManager ───────────────────────────────────────────────────
+  D('TimerManager', () => {
+
+    // Inject a fake setInterval/clearInterval so tests run synchronously
+    let tickCallback  = null;
+    let intervalHandle = 0;
+    TimerManager._setInterval   = (fn) => { tickCallback = fn; return ++intervalHandle; };
+    TimerManager._clearInterval = ()   => { tickCallback = null; };
+
+    // Reset TaskStore to a clean mock before each timer test
+    const mock = createMockStorage();
+    TaskStore._storage = mock;
+    const DATE   = '2026-06-14';
+
+    I('isRunning() returns false initially', () => {
+      // Reset manager state
+      TimerManager.activeTaskId  = null;
+      TimerManager.activeDateKey = null;
+      TimerManager._intervalId   = null;
+      E(TimerManager.isRunning('any-id')).toBeFalsy();
+    });
+
+    I('start() sets the active task', () => {
+      mock.clear();
+      TimerManager.activeTaskId = null;
+      const task = TaskStore.addTask(DATE, 'Timer test');
+      TimerManager.start(DATE, task.id);
+      E(TimerManager.isRunning(task.id)).toBeTruthy();
+      TimerManager.stop(); // Clean up
+    });
+
+    I('start() sets timerStartedAt on the task', () => {
+      mock.clear();
+      TimerManager.activeTaskId = null;
+      const task      = TaskStore.addTask(DATE, 'Timer start test');
+      const before    = Date.now();
+      TimerManager.start(DATE, task.id);
+      const after     = Date.now();
+      const refreshed = TaskStore.getTask(DATE, task.id);
+      E(refreshed.timerStartedAt).toBeGreaterThan(before - 1);
+      E(refreshed.timerStartedAt).toBeLessThan(after  + 1);
+      TimerManager.stop();
+    });
+
+    I('stop() clears the active task id', () => {
+      mock.clear();
+      TimerManager.activeTaskId = null;
+      const task = TaskStore.addTask(DATE, 'Stop test');
+      TimerManager.start(DATE, task.id);
+      TimerManager.stop();
+      E(TimerManager.activeTaskId).toBeNull();
+    });
+
+    I('stop() commits elapsed seconds to the task', () => {
+      mock.clear();
+      TimerManager.activeTaskId = null;
+      const task      = TaskStore.addTask(DATE, 'Commit test');
+      // Manually backdate timerStartedAt to simulate 5 seconds running
+      TaskStore.updateTask(DATE, task.id, { timerStartedAt: Date.now() - 5000 });
+      // Fake-start the manager (bypassing setInterval)
+      TimerManager.activeTaskId  = task.id;
+      TimerManager.activeDateKey = DATE;
+      TimerManager.stop();
+      const saved = TaskStore.getTask(DATE, task.id);
+      // Should have at least 4.9 seconds committed
+      E(saved.timeSpentSeconds).toBeGreaterThan(4.9);
+      E(saved.timerStartedAt).toBeNull();
+    });
+
+    I('stop() is a no-op when no timer is running', () => {
+      TimerManager.activeTaskId = null;
+      // Should not throw
+      let threw = false;
+      try { TimerManager.stop(); } catch (_) { threw = true; }
+      E(threw).toBeFalsy();
+    });
+
+    I('starting a second timer stops the first', () => {
+      mock.clear();
+      TimerManager.activeTaskId = null;
+      const task1 = TaskStore.addTask(DATE, 'Task 1');
+      const task2 = TaskStore.addTask(DATE, 'Task 2');
+
+      TimerManager.start(DATE, task1.id);
+      E(TimerManager.isRunning(task1.id)).toBeTruthy();
+
+      TimerManager.start(DATE, task2.id);
+      E(TimerManager.isRunning(task1.id)).toBeFalsy();
+      E(TimerManager.isRunning(task2.id)).toBeTruthy();
+
+      TimerManager.stop();
+    });
+
+    I('isRunning() returns false for a non-active task id', () => {
+      mock.clear();
+      TimerManager.activeTaskId = null;
+      const task1 = TaskStore.addTask(DATE, 'Active');
+      const task2 = TaskStore.addTask(DATE, 'Inactive');
+      TimerManager.start(DATE, task1.id);
+      E(TimerManager.isRunning(task2.id)).toBeFalsy();
+      TimerManager.stop();
+    });
+
+    // Restore real setInterval/clearInterval after timer tests
+    TimerManager._setInterval   = (fn, ms) => setInterval(fn, ms);
+    TimerManager._clearInterval = (id)     => clearInterval(id);
+    // Restore real localStorage
+    TaskStore._storage = (typeof localStorage !== 'undefined') ? localStorage : null;
+  });
+
+  // ── Render results ──────────────────────────────────────────────────────────
+  Runner.render();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BOOTSTRAP
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Run tests once on page load, and again when the button is clicked. */
+document.addEventListener('DOMContentLoaded', () => {
+  runAllTests();
+  document.getElementById('btn-run').addEventListener('click', runAllTests);
+});
+</script>
+</body>
+</html>
